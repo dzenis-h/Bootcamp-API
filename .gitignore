@@ -1,2 +1,4 @@
 node_modules
+theme
 config/config.prod.env
+config/config.env

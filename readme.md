@@ -29,3 +29,9 @@ node seeder -i
 # Destroy all data
 node seeder -d
 ```
+
+## Documentation:
+
+If you're interested in exploring this API in-depth here's a link for the documentation:
+
+https://bootcamp-api-docs.firebaseapp.com
