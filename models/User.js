@@ -1,32 +1,32 @@
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const crypto = require("crypto");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please add a name']
+    required: [true, "Please add a name"]
   },
   email: {
     type: String,
-    required: [true, 'Please add an email'],
+    required: [true, "Please add an email"],
     unique: true,
     match: [
       /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      'Please add a valid email'
+      "Please add a valid email"
     ]
   },
   role: {
     type: String,
-    enum: ['user', 'publisher'],
-    default: 'user'
+    enum: ["user", "publisher"],
+    default: "user"
   },
   password: {
     type: String,
-    required: [true, 'Please add a password'],
+    required: [true, "Please add a password"],
     minlength: 6,
-    select: false
+    select: false // don't select the password, cause we don't want that to be send to the FE
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
@@ -37,8 +37,8 @@ const UserSchema = new mongoose.Schema({
 });
 
 // Encrypt password using bcrypt
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
+UserSchema.pre("save", async function(next) {
+  if (!this.isModified("password")) {
     next();
   }
 
@@ -61,18 +61,24 @@ UserSchema.methods.matchPassword = async function(enteredPassword) {
 // Generate and hash password token
 UserSchema.methods.getResetPasswordToken = function() {
   // Generate token
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  // NOTE: We'll include this into the URL send to the user, so that's why we're returning this value from this method
+  const resetToken = crypto.randomBytes(20).toString("hex"); // look at this as 'salt' :)
 
-  // Hash token and set to resetPasswordToken field
+  // NOTE: However, we'll store the hashed version to DB. The logic here is, the user will receive an email
+  // containing the 'resetToken' and we'll extract that token from params and run it again through the same
+  // Crypto function, in our controller method. After that, we'll search for a user in our DB that matches
+  // the 'resetPasswordToken' field that was set using the method above.
+
   this.resetPasswordToken = crypto
-    .createHash('sha256')
+    // Hash token and set to resetPasswordToken field
+    .createHash("sha256")
     .update(resetToken)
-    .digest('hex');
+    .digest("hex");
 
-  // Set expire
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+  // Set the expire field
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 min
 
   return resetToken;
 };
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model("User", UserSchema);
